@@ -1,9 +1,7 @@
 import sys
 from collections import Counter
-import logging
 import codecs
 import numpy as np
-import itertools
 
 class Vocab(object):
 	def __init__(self, train_file, pretrained_src = None, pretrained_tgt = None):
@@ -27,7 +25,6 @@ class Vocab(object):
 				self._id2tgt.append(w)
 		self.source_vocab_size  =  len(self._id2src)
 		self.target_vocab_size  =  len(self._id2tgt)
-		#print self.source_vocab_size, self.target_vocab_size
 
 		self._src2id = dict(zip( self._id2src, range(self.source_vocab_size)))
 		self._tgt2id = dict(zip( self._id2tgt, range(self.target_vocab_size)))
@@ -54,14 +51,14 @@ class Vocab(object):
 			return [self._id2tgt[t] for t in x]
 		return self._id2tgt[x]
 
-	def get_pretrained_src(self):
+	def get_pretrained_src(self,emb_size):
 		if self.pretrained_src is None:
 			return None
 		embs = [[]]*len(self._src2id)
 		with codecs.open(self.pretrained_src,'r','utf-8') as f:
 			for line in f.readlines():
 				info = line.strip().split()
-				if len(info) !=301: # the length of the line should be equal to the dimension size of the embeddings +1
+				if len(info) !=emb_size+1: 
 					continue
 				try:
 					word, data = info[0], info[1:]
@@ -77,19 +74,18 @@ class Vocab(object):
 		#return embs
 		return np.asarray(embs, dtype=np.float32)
 
-	def get_pretrained_tgt(self):
+	def get_pretrained_tgt(self,emb_size):
 		if self.pretrained_tgt is None:
 			return None
 		embs = [[]]*len(self._tgt2id)
 		with codecs.open(self.pretrained_tgt,'r','utf-8') as f:
 			for line in f.readlines():
 				info = line.strip().split()
-				word, data = info[0], info[1:]
-				assert len(data) == 300, (line, len(data))
-				if word in self._tgt2id:
-					embs[self.tgt2id(word)] = data
+				if len(info) == emb_size+1: 
+					word, data = info[0], info[1:]
+					if word in self._tgt2id:
+						embs[self.tgt2id(word)] = data
 
-		emb_size = len(data)
 		for idx, emb in enumerate(embs):
 			if not emb:
 				embs[idx] = np.zeros(emb_size)

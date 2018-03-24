@@ -1,18 +1,16 @@
 import torch
 from torch.autograd import Variable
-from torch import optim
 import torch.nn.functional as F
 import torch.nn as nn
 
-use_cuda = torch.cuda.is_available()
-#use_cuda = False
 class EncoderCNNRNN(nn.Module):
-	def __init__(self, vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers=1, pretrained_embs = None):
+	def __init__(self, vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers=1, pretrained_embs = None,  use_cuda=False):
 		super(EncoderCNNRNN, self).__init__()
 		self.n_layers = n_layers
 		self.hidden_size = hidden_size
 		self.dropout = nn.Dropout(dropout)
 		self.embedding = nn.Embedding(vocab_size, emb_size)
+		self.use_cuda= use_cuda
 
 		#self.embedding.weight.requires_grad = False
 		if pretrained_embs is not None:
@@ -30,27 +28,29 @@ class EncoderCNNRNN(nn.Module):
 
 		return output, torch.mean(output, 1) # batch_size x seq_len x hidden_size,  batch_size x hidden_size
 
-	def initHidden(self, batch_size):	
+	def initHidden(self, batch_size):
 		result = Variable(torch.zeros(self.n_layers, batch_size, self.hidden_size))
-		if use_cuda:
+		if self.use_cuda:
 			return result.cuda()
 		else:
 			return result
 
 class AttentionRegression(nn.Module):
-	def __init__(self, vocab, emb_size, feature_size, window_size, dropout, hidden_size, n_layers, attention_size):
+	def __init__(self, vocab, emb_size, feature_size, window_size, dropout, hidden_size, n_layers, attention_size,  use_cuda=False):
 		super(AttentionRegression, self).__init__()
-		self.encoder_s = EncoderCNNRNN(vocab.source_vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers, vocab.get_pretrained_src())
-		self.encoder_t = EncoderCNNRNN(vocab.target_vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers, vocab.get_pretrained_tgt())
+		self.vocab=vocab
+		self.encoder_s = EncoderCNNRNN(vocab.source_vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers, vocab.get_pretrained_src(emb_size),  use_cuda)
+		self.encoder_t = EncoderCNNRNN(vocab.target_vocab_size, emb_size, feature_size, window_size, hidden_size, dropout, n_layers, vocab.get_pretrained_tgt(emb_size),  use_cuda)
 		self.s2att_s = nn.Linear(hidden_size, attention_size)
 		self.t2att_s = nn.Linear(hidden_size, attention_size ,bias = False)
 		self.attw_s = nn.Linear(attention_size, 1)
-		
+		self.use_cuda = use_cuda
 		self.t2att_t = nn.Linear(hidden_size, attention_size)
 		self.s2att_t = nn.Linear(hidden_size, attention_size ,bias = False)
 		self.attw_t = nn.Linear(attention_size, 1)
 		self.dropout = nn.Dropout(dropout)
 		self.regression = nn.Linear(2*hidden_size, 1)
+		#self.regression = nn.Sigmoid(2*hidden_size)
 		#self.regression = nn.ModuleList([nn.Linear(2*hidden_size, 1) for i in range(4)])
 
 

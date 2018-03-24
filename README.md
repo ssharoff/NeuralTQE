@@ -1,19 +1,18 @@
 # NeuralTQE
-A stacking model of quality estimation implemented with PyTorch 
+An extension of MT Quality Estimation model from [hittle2015/NeuralTQE]
+
+# Method
+The basic idea is to use cross-attention over the vectors produced for the source sentences and their MT versions.
 
 # Training and Testing Data Format
 Training and Testing data should be in the format as :
 source_sentence \t target_sentence \t \ score
 Note that all sentences should be segmented.
 
-# Using GPU
-If you are running the code with GPU, simply set the `use_cuda=torch.cuda.is_available()`, otherwise set `use_cuda=False`
-
-# Pretrained Embeddings
-Download or pretrain monolingual or crosslingual embeddings and have the first line in each file deleted.  Note that pretrained embeddings may be  problematic due to some lines contain empty words or null vectors. 
-
-
 # Run the Code
-To run the code,
-1. configure your parameters in the mtmain.py file.
-2. run  `python mtmain.py`.
+The basic setup is:
+```
+python mtmain.py -m ModelFile -t de_en.train -v de_en.dev -1 de-300.vec -2 en-300.vec -o Predictions
+```
+For more info about the training parameters, run the standard:
+`python mtmain.py -h`

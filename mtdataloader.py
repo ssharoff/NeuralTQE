@@ -1,6 +1,9 @@
 import codecs
 import numpy as np
 import itertools
+import logging
+
+logger = logging.getLogger()
 
 class DataLoader(object):
 	def __init__(self, vocab, fname):
@@ -23,8 +26,7 @@ class DataLoader(object):
 					self.scores.append(scores)
 					
 				except ValueError as e:
-					 print ("error",e,"on line",i, info[2])
-			
+					 logger.info("error %s in line %d: %s" % (e,i, info[2]))
 
 	def get_batches(self, batch_size, shuffle = True):
 		idx = list(range(len(self.src_data)))
@@ -51,5 +53,4 @@ class DataLoader(object):
 			seq_len = max(len(t) for t in target)
 			target = [ self.vocab.tgt2id(t) + [0]*(seq_len - len(t)) for t in target ]
 			yield input, target, score
-		#print (input)
- 
+
