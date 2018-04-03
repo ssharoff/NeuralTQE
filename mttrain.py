@@ -55,11 +55,11 @@ def train(model, vocab, args):
 				sys.stdout.write('Epoch[%d], Batch: %d, train loss: %.4f\r' % (epoch, idx, loss))
 				sys.stdout.flush()
 		model.eval()
-		result = test(model, vocab, args)
-		if result > best_corr:
-			best_corr = result
+		test_corr, test_loss = test(model, vocab, args)
+		if test_corr > best_corr:
+			best_corr = test_corr
 			torch.save(model, args.model_file)
-			logger.info('Saved new model with %.4f correlation' % result)
+			logger.info('Saved best tanh at %d with %.4f r and %.4f loss' % (epoch, test_corr, test_loss))
 	# return train_org, train_pred
 
 def test(model, vocab, args):
@@ -88,9 +88,9 @@ def test(model, vocab, args):
 		test_orgs.extend(golden.data.cpu().numpy().tolist()) 
 		test_preds.extend(preds.data.cpu().numpy().tolist())
 
-	result = loss / tot_size
+	norm_loss = loss / tot_size
 	pr, spr, kt = metrics.calc_correl(test_orgs, test_preds)
 
-	logger.info("Loss: %.4f, pr %.3f, spr %.3f, kt %.3f"%(result, pr, spr, kt))
-	# return result.data[0]
-	return(pr)
+	logger.info("Loss: %.4f, pr %.3f, spr %.3f, kt %.3f" % (norm_loss, pr, spr, kt))
+
+	return(pr,loss)

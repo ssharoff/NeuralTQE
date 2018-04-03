@@ -49,8 +49,8 @@ class AttentionRegression(nn.Module):
 		self.s2att_t = nn.Linear(hidden_size, attention_size ,bias = False)
 		self.attw_t = nn.Linear(attention_size, 1)
 		self.dropout = nn.Dropout(dropout)
-		self.regression = nn.Linear(2*hidden_size, 1)
-		#self.regression = nn.Sigmoid(2*hidden_size)
+		self.regression = nn.Linear(2*hidden_size, hidden_size)
+		self.out = nn.Linear(hidden_size, 1)
 		#self.regression = nn.ModuleList([nn.Linear(2*hidden_size, 1) for i in range(4)])
 
 
@@ -65,7 +65,8 @@ class AttentionRegression(nn.Module):
 		repr_t = torch.sum(weight_t * output_t, 1)
 
 		repr_st = self.dropout(torch.cat((repr_s, repr_t), 1))
-		score = torch.squeeze( self.regression(repr_st))
+		score = torch.squeeze(self.out(F.tanh(self.regression(repr_st))))
+		#score = torch.squeeze( self.regression(repr_st))
 		#score = [ torch.squeeze( regression(repr_st)) for regression in self.regression]
 
 		return score
